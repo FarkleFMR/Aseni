@@ -1,0 +1,62 @@
+using System;
+using System.Data;  
+using System.Data.SqlClient;  
+namespace AdoNetConsoleApplication  
+{  
+    class Program  
+    {  
+        static void Main(string[] args)  
+        {  
+            new Program().Query1();  
+        }  
+        public void Query1()  
+        {  
+            SqlConnection con = null;  
+            try  
+            {  
+                // Creating Connection  
+                con = new SqlConnection("data source=.; database=Aseni;integrated security=SSPI");  
+                
+                // writing sql query  
+                SqlCommand cm = new SqlCommand("ListaEntregables", con);
+                cm.CommandType = CommandType.StoredProcedure;
+
+                SqlParameter canton;
+                canton = cm.Parameters.Add("@canton",SqlDbType.Int);
+                canton.Value = 1;
+
+                SqlCommand cmd = new SqlCommand("SELECT C.id AS Id_Canton, C.nombre AS Canton, count(*) AS Cantidad_Entregables FROM  Canton AS C inner join Entregable AS E ON C.id = E.id_canton inner join (	SELECT count(*) AS Total_partidos FROM Partido )AS Partidos ON Partidos.Total_partidos > 0 GROUP BY C.id,C.nombre,Total_partidos HAVING Partidos.Total_partidos*0.25 >= count(DISTINCT E.id_partido)", con);
+
+                // Opening Connection  
+                con.Open();   
+                
+                SqlDataReader sdr = cm.ExecuteReader();
+                
+                while (sdr.Read())
+                {
+                    Console.WriteLine(sdr["id"] + " " + sdr["proposito"] + " " + sdr["kpi" ] + " " + sdr["id_canton"] + " " + sdr["id_partido"]);
+
+                }
+
+                con.Close();
+                
+                con.Open();
+
+                SqlDataReader sdr2 = cmd.ExecuteReader();
+
+                while (sdr2.Read())
+                {
+                    Console.WriteLine(sdr2["Id_Canton"] + " " + sdr2["Canton"]+" "+ sdr2["Cantidad_Entregables"]);
+                }
+
+                con.Close();
+                   
+            }  
+            catch (Exception e)  
+            {  
+                Console.WriteLine("OOPs, something went wrong."+e);  
+            }   
+            
+        }  
+    }  
+} 
