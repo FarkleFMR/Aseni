@@ -9,7 +9,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 
-
 public class ConnectURL {
 	
 	private static int cantidad;
@@ -62,14 +61,33 @@ public class ConnectURL {
         		}.start();
         	}
         	
-            Statement stmt2 = con.createStatement();
-        	String SQL = "SELECT C.id AS Id_Canton, C.nombre AS Canton, count(*) AS Cantidad_Entregables FROM  Canton AS C inner join Entregable AS E ON C.id = E.id_canton inner join (	SELECT count(*) AS Total_partidos FROM Partido )AS Partidos ON Partidos.Total_partidos > 0 GROUP BY C.id,C.nombre,Total_partidos HAVING Partidos.Total_partidos*0.25 >= count(DISTINCT E.id_partido)";
-            ResultSet rs = stmt2.executeQuery(SQL);
-
-            // Iterate through the data in the result set and display it.
-            while (rs.next()) {
-                System.out.println(rs.getString("Id_Canton") + " " + rs.getString("Canton") + " " + rs.getString("Cantidad_Entregables"));
-            }
+        	
+        	ConnectionPool connectionPool = BasicConnectionPool.create("jdbc:sqlserver://localhost:1433;databaseName=Aseni;encrypt=true;trustServerCertificate=true;","Jenaro", "Jenaro2000");
+        	Statement stmt2 = connectionPool.getConnection().createStatement();
+        	for(int i=0; i < 10; i++) {
+        		
+        		String SQL = "SELECT C.id AS Id_Canton, C.nombre AS Canton, count(*) AS Cantidad_Entregables FROM  Canton AS C inner join Entregable AS E ON C.id = E.id_canton inner join (	SELECT count(*) AS Total_partidos FROM Partido )AS Partidos ON Partidos.Total_partidos > 0 GROUP BY C.id,C.nombre,Total_partidos HAVING Partidos.Total_partidos*0.25 >= count(DISTINCT E.id_partido)";
+        		new Thread("" + i) {
+        			public void run(){
+        		          System.out.println("Thread2: " + getName() + " running");
+        		      
+						try {
+							ResultSet rs = stmt2.executeQuery(SQL);
+							while (rs.next()) {
+				                System.out.println(rs.getString("Id_Canton") + " " + rs.getString("Canton") + " " + rs.getString("Cantidad_Entregables"));
+				            }
+							
+						} catch (SQLException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+        		          
+        		          
+        		          
+        		        }
+        		}.start();
+        	}
+        	
         }
         // Handle any errors that may have occurred.
         catch (SQLException e) {
