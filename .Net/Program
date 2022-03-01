@@ -1,21 +1,73 @@
 using System;
 using System.Data;  
-using System.Data.SqlClient;  
+using System.Data.SqlClient;
+using System.Threading;
+
 namespace AdoNetConsoleApplication  
 {  
-    class Program  
-    {  
+    class Program{
+
+    // Creating Connection  
+    static SqlConnection con = new SqlConnection("data source=.; database=Aseni;integrated security=SSPI");
+    static SqlConnection pool = new SqlConnection("data source=.; database=Aseni; user ID=Jenaro;Password=Jenaro2000;integrated security=SSPI;Max Pool Size=4");
+
+    static int cantones;
+    
         static void Main(string[] args)  
         {  
-            new Program().Query1();  
-        }  
-        public void Query1()  
+            new Program().cantidad_canton();
+            Thread t = new Thread(new ThreadStart(ThreadProc));
+            t.Start();
+            for (int i = 0; i < 10; i++){
+                var rand = new Random();
+                Console.WriteLine("Query1: {0}", i);
+                new Program().Query1(rand.Next(1,cantones + 1));
+                Console.WriteLine(" ");
+                Thread.Sleep(0);
+            }
+            Console.WriteLine("Main thread: Call Join(), to wait until ThreadProc ends.");
+            t.Join();
+            Console.WriteLine("Main thread: ThreadProc.Join has returned.  Press Enter to end program.");
+            Console.ReadLine();
+        }
+
+        public static void ThreadProc(){
+             for (int i = 0; i < 10; i++){
+                 Console.WriteLine("Query2: {0}", i);
+                 new Program().Query2();
+                 Console.WriteLine(" ");
+                 Thread.Sleep(0);
+             }
+        }
+
+        public void cantidad_canton(){
+            try{
+                SqlCommand cm = new SqlCommand("SELECT COUNT(*) AS cantones_total FROM Canton",con);
+                con.Open();
+                
+                SqlDataReader sdr3 = cm.ExecuteReader();
+                while (sdr3.Read())
+                {
+                    cantones = int.Parse(sdr3["cantones_total"].ToString());
+                    
+                }
+                
+
+                con.Close();
+                
+            }
+            catch (Exception e)  
+            {  
+                Console.WriteLine("OOPs, something went wrong."+e); 
+            }
+        }
+
+        public void Query1(int cantones)  
         {  
-            SqlConnection con = null;  
             try  
             {  
                 // Creating Connection  
-                con = new SqlConnection("data source=.; database=Aseni;integrated security=SSPI");  
+                  
                 
                 // writing sql query  
                 SqlCommand cm = new SqlCommand("ListaEntregables", con);
@@ -23,9 +75,7 @@ namespace AdoNetConsoleApplication
 
                 SqlParameter canton;
                 canton = cm.Parameters.Add("@canton",SqlDbType.Int);
-                canton.Value = 1;
-
-                SqlCommand cmd = new SqlCommand("SELECT C.id AS Id_Canton, C.nombre AS Canton, count(*) AS Cantidad_Entregables FROM  Canton AS C inner join Entregable AS E ON C.id = E.id_canton inner join (	SELECT count(*) AS Total_partidos FROM Partido )AS Partidos ON Partidos.Total_partidos > 0 GROUP BY C.id,C.nombre,Total_partidos HAVING Partidos.Total_partidos*0.25 >= count(DISTINCT E.id_partido)", con);
+                canton.Value = cantones;
 
                 // Opening Connection  
                 con.Open();   
@@ -40,7 +90,21 @@ namespace AdoNetConsoleApplication
 
                 con.Close();
                 
-                con.Open();
+                
+                   
+            }  
+            catch (Exception e)  
+            {  
+                Console.WriteLine("OOPs, something went wrong."+e);  
+            }   
+            
+        }
+
+        public void Query2()
+        { 
+            try{
+                SqlCommand cmd = new SqlCommand("SELECT C.id AS Id_Canton, C.nombre AS Canton, count(*) AS Cantidad_Entregables FROM  Canton AS C inner join Entregable AS E ON C.id = E.id_canton inner join (	SELECT count(*) AS Total_partidos FROM Partido )AS Partidos ON Partidos.Total_partidos > 0 GROUP BY C.id,C.nombre,Total_partidos HAVING Partidos.Total_partidos*0.25 >= count(DISTINCT E.id_partido)", pool);
+                pool.Open();
 
                 SqlDataReader sdr2 = cmd.ExecuteReader();
 
@@ -49,14 +113,13 @@ namespace AdoNetConsoleApplication
                     Console.WriteLine(sdr2["Id_Canton"] + " " + sdr2["Canton"]+" "+ sdr2["Cantidad_Entregables"]);
                 }
 
-                con.Close();
-                   
-            }  
+                pool.Close();            
+            }
             catch (Exception e)  
             {  
                 Console.WriteLine("OOPs, something went wrong."+e);  
-            }   
-            
-        }  
+            } 
+
+        }
     }  
 } 
