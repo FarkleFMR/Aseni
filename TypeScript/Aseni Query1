@@ -13,7 +13,7 @@ const dbSettings = { //Conficuracion de la base de datos
       }
 };
 
-const poolPromise = new sql.ConnectionPool(dbSettings)
+const poolPromise = new sql.ConnectionPool(dbSettings)//Pool
 .connect()
   .then(pool => {
     console.log('Connected to MSSQL')
@@ -21,28 +21,17 @@ const poolPromise = new sql.ConnectionPool(dbSettings)
   })
   .catch(err => console.log('Database Connection Failed! Bad Config: ', err))
   
-const pool = poolPromise
 
-/*async function getConnection() {//Conectar a la base y realiza un query
-    const pool = await sql.connect(dbSettings);//va generar pool una vez se conecte
-    const result = await pool.request().query("SELECT C.id AS Id_Canton, C.nombre AS Canton, count(*) AS Cantidad_Entregables FROM  Canton AS C inner join Entregable AS E ON C.id = E.id_canton inner join (	SELECT count(*) AS Total_partidos FROM Partido )AS Partidos ON Partidos.Total_partidos > 0 GROUP BY C.id,C.nombre,Total_partidos HAVING Partidos.Total_partidos*0.25 >= count(DISTINCT E.id_partido)")//Para realizar consultas
-    console.log(result);
-    pool.close();
-}*/
 
 async function runQuery(query) {
-  const pool = await poolPromise
+  const pool = await poolPromise//Accede al pol
   const result = await pool.request().query(query)//Para realizar consultas
   console.log(result)
-  // sql.connect() will return the existing global pool if it exists or create a new one if it doesn't
-  /*return sql.connect(dbSettings).then((pool) => {
-    return pool.query(query,(err, result)=>{
-      console.log(result)
-    })
-  })*/
+  pool.close()
+ 
 }
 
 
-//getConnection();
+//Ejecuta el programa
 runQuery("SELECT C.id AS Id_Canton, C.nombre AS Canton, count(*) AS Cantidad_Entregables FROM  Canton AS C inner join Entregable AS E ON C.id = E.id_canton inner join (	SELECT count(*) AS Total_partidos FROM Partido )AS Partidos ON Partidos.Total_partidos > 0 GROUP BY C.id,C.nombre,Total_partidos HAVING Partidos.Total_partidos*0.25 >= count(DISTINCT E.id_partido)");
-async () =>{ await sql.close()}
+
