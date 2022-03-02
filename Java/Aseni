@@ -11,38 +11,42 @@ import java.sql.Statement;
 
 public class ConnectURL {
 	
-	private static int cantidad;
+	private static int cantidad;//Guarda total cantones
 	
 	
     public static void main(String[] args) throws ClassNotFoundException {
    
-        // Create a variable for the connection string.
+        // Conectar con la base
     	Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
         String connectionUrl = "jdbc:sqlserver://localhost:1433;databaseName=Aseni;encrypt=true;trustServerCertificate=true;user=Jenaro;password=Jenaro2000";
         
         try (Connection con = DriverManager.getConnection(connectionUrl)) {
             
-   
+        //Toma el tiempo
         	long TInicio1 = System.currentTimeMillis();
+        //Ejecuta un query para saber el total de cantones
         	Statement stmtcantidad = con.createStatement();
         	String query = "SELECT COUNT(*) AS Cantidad FROM Canton";
         	ResultSet resultado = stmtcantidad.executeQuery(query);
+        //Guarda el resultado
         	if (resultado.next()) {
         		cantidad = Integer.parseInt(resultado.getString("Cantidad"));
         	}
         	
         	
-        	
+        	//Se crean 10 hilos
         	for(int i=0; i<10; i++) {
+        		//Ejecutar el SP
         		CallableStatement stmt = con.prepareCall("{call  ListaEntregables(?)}");
 				stmt.setInt(1,(int) (Math.random()*cantidad));
 				boolean hashresult = stmt.execute();
+				//Se generan los hilos
         		new Thread("" + i) {
         			public void run(){
         		          System.out.println("Thread: " + getName() + " running");
         		      
 						try {
-							
+							//Se imprimen los resultados
 							if (hashresult) {
 				            	ResultSet res = stmt.getResultSet();
 				            	while (res.next()) {
@@ -60,24 +64,29 @@ public class ConnectURL {
         		        }
         		}.start();
         	}
+        	//Termina de contar el tiempo
         	long TFin1 = System.currentTimeMillis();
         	
         	long tiempo1 = TFin1-TInicio1;
-        	
+        	//Imprime el tiempo
         	System.out.println("Tiempo del query 1 es: ");
         	System.out.println(tiempo1);
-        	
+        	//Cuenta el tiempo
         	long TInicio2 = System.currentTimeMillis();
+        	//Se conecta por medio de pooling
         	ConnectionPool connectionPool = BasicConnectionPool.create("jdbc:sqlserver://localhost:1433;databaseName=Aseni;encrypt=true;trustServerCertificate=true;","Jenaro", "Jenaro2000");
         	Statement stmt2 = connectionPool.getConnection().createStatement();
+        	//Hilos
         	for(int i=0; i < 10; i++) {
-        		
+        		//Ejecuta el inlineQuery
         		String SQL = "SELECT C.id AS Id_Canton, C.nombre AS Canton, count(*) AS Cantidad_Entregables FROM  Canton AS C inner join Entregable AS E ON C.id = E.id_canton inner join (	SELECT count(*) AS Total_partidos FROM Partido )AS Partidos ON Partidos.Total_partidos > 0 GROUP BY C.id,C.nombre,Total_partidos HAVING Partidos.Total_partidos*0.25 >= count(DISTINCT E.id_partido)";
+        		//Genera los hilos
         		new Thread("" + i) {
         			public void run(){
         		          System.out.println("Thread2: " + getName() + " running");
         		      
 						try {
+							//Imprime resultados
 							ResultSet rs = stmt2.executeQuery(SQL);
 							while (rs.next()) {
 				                System.out.println(rs.getString("Id_Canton") + " " + rs.getString("Canton") + " " + rs.getString("Cantidad_Entregables"));
@@ -93,6 +102,7 @@ public class ConnectURL {
         		        }
         		}.start();
         	}
+        	//Termina de contar
         	long TFin2 = System.currentTimeMillis();
         	
         	long tiempo2 = TFin2-TInicio2;
@@ -101,7 +111,6 @@ public class ConnectURL {
         	System.out.println(tiempo2);
         	
         }
-        // Handle any errors that may have occurred.
         catch (SQLException e) {
             e.printStackTrace();
         }
