@@ -19,11 +19,11 @@ public class ConnectURL {
         // Create a variable for the connection string.
     	Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
         String connectionUrl = "jdbc:sqlserver://localhost:1433;databaseName=Aseni;encrypt=true;trustServerCertificate=true;user=Jenaro;password=Jenaro2000";
-
+        
         try (Connection con = DriverManager.getConnection(connectionUrl)) {
             
    
-        	
+        	long TInicio1 = System.currentTimeMillis();
         	Statement stmtcantidad = con.createStatement();
         	String query = "SELECT COUNT(*) AS Cantidad FROM Canton";
         	ResultSet resultado = stmtcantidad.executeQuery(query);
@@ -60,8 +60,14 @@ public class ConnectURL {
         		        }
         		}.start();
         	}
+        	long TFin1 = System.currentTimeMillis();
         	
+        	long tiempo1 = TFin1-TInicio1;
         	
+        	System.out.println("Tiempo del query 1 es: ");
+        	System.out.println(tiempo1);
+        	
+        	long TInicio2 = System.currentTimeMillis();
         	ConnectionPool connectionPool = BasicConnectionPool.create("jdbc:sqlserver://localhost:1433;databaseName=Aseni;encrypt=true;trustServerCertificate=true;","Jenaro", "Jenaro2000");
         	Statement stmt2 = connectionPool.getConnection().createStatement();
         	for(int i=0; i < 10; i++) {
@@ -87,6 +93,12 @@ public class ConnectURL {
         		        }
         		}.start();
         	}
+        	long TFin2 = System.currentTimeMillis();
+        	
+        	long tiempo2 = TFin2-TInicio2;
+        	
+        	System.out.println("Tiempo del query 2 es: ");
+        	System.out.println(tiempo2);
         	
         }
         // Handle any errors that may have occurred.
